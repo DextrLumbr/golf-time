@@ -1,0 +1,303 @@
+import Database from "./database/Database.js";
+import Express from "express";
+import CORS from "cors";
+import Path from "path";
+import axios from "axios";
+import cheerio from "cheerio";
+
+const App = Express();
+const port = process.env.PORT || 5000;
+
+App.use(Express.json());
+App.use(CORS());
+
+// Routes for "players" collection
+const dbPlayers = new Database();
+dbPlayers.connect("players");
+
+// POST ROUTE: Create a new account
+App.post("/api/account/create", async (req, res) => {
+  let username = req.body.username;
+  const response = await dbPlayers.createAccount(username);
+  res.json(response);
+});
+
+// GET ROUTE: Find account
+App.get("/api/account/:username", async (req, res) => {
+  let username = req.params.username;
+  const response = await dbPlayers.readAccount(username);
+  res.json(response);
+});
+
+App.patch("/api/account/:username", async (req, res) => {
+  let username = req.params.username;
+  let newPin = req.body.newPin;
+  const response = await dbPlayers.addGame(username, newPin);
+  res.json(response);
+});
+
+// Routes for "games" collection
+const dbGames = new Database();
+dbGames.connect("games");
+
+// POST ROUTE: Create a new game
+App.post("/api/games/:pin", async (req, res) => {
+  let newGame = {
+    pin: req.params.pin,
+    course: req.body.course,
+    holes: req.body.holes,
+    scorecard: req.body.scorecard
+  };
+  const response = await dbGames.createGame(newGame);
+  res.json(response);
+});
+
+// GET ROUTE: Search the game database and return the game details
+App.get("/api/games/:pin", async (req, res) => {
+  let gamePin = req.params.pin;
+  const response = await dbGames.readOne(gamePin);
+  res.json(response);
+});
+
+// GET ROUTE: Search for multiple games with an array of pins
+App.get("/api/player/games", async (req, res) => {
+  let pinArray = req.query.pinArray;
+  const response = await dbGames.readMany(pinArray);
+  res.json(response);
+});
+
+// PATCH ROUTE: Add a player to the game
+App.patch("/api/games/:pin", async (req, res) => {
+  let pin = req.params.pin;
+  // Retrieve player data
+  let playerData = {
+    username: req.body.username,
+    gameArray: req.body.gameArray,
+  };
+  const response = await dbGames.updateOne(pin, playerData);
+  res.json(response);
+});
+
+// Routes for "course" collection
+const dbCourses = new Database();
+dbCourses.connect("courses");
+
+App.get("/api/courses/:name", async(req,res) => {
+  console.log(req.params.name)
+  let courses = []
+  const response = await dbCourses.findMyCourseByName(req.params.name);
+  console.log(response[0] ? response[0].name : null)
+  if (response.length === 0) {
+    console.log('search external db')
+    // make sure no repeating cids
+    let { data } = await axios({
+      method:"GET",
+      url:'https://freegolftracker.com/courses/ajaxgetcourse.php',
+      params: {
+        cnamechk: req.params.name
+      },
+    })
+    var courseEntires = []
+    data.map(x=>courseEntires.push({name:x.course_name,cid:x.courseid,address:{cityState:x.city + ', ' + x.state}}))
+    // console.log(courseEntires)
+    const entries = await dbCourses.insertCourses(courseEntires);
+    res.json(courseEntires)
+  } else {
+    res.json(response)
+  }
+  /*let { data } = await axios({
+    method: "GET",
+    // url: "https://www.mscorecard.com/mscorecard/courses.php?CourseName=eagle+creek&Country=USA&SubmitButton=Search",
+    url: 'https://www.mscorecard.com/mscorecard/courses.php',
+    params: {
+      CourseName: req.params.name,
+      Country: "USA",
+      SubmitButton: "Search",
+      // within: "50",
+    },
+  });
+
+  const $ = cheerio.load(data);
+  let elements = $("div.page-content");
+  elements
+    .find("a > div.row")
+    // .find("#search_result > div > div.course-heading > div > span.courseTitleKey > span:nth-child(1) > a")
+    .each((i, element) => {
+      const $element = $(element);
+      var urlName = $element.parent().attr('href')
+      // console.log($element.parent().attr('href'))
+      if ($element.find('div').first().find('div').length == 4) {
+        var courseName = $element.find('div').first().find('div:nth-child(3)').text().trim()
+        // console.log($element.find('div').first().find('div:nth-child(3)').text().trim())
+      } else {
+        var courseName = $element.find('div').first().find('div:nth-child(2)').text().trim()
+        // console.log($element.find('div').first().find('div:nth-child(2)').text().trim())
+      }
+      let courseLocation = $element.find('div.course-location').text().trim()
+      let course = {
+        name: courseName,
+        location: courseLocation,
+        slug: urlName,
+      }
+      courses.push(course);
+    });
+    console.log(courses)*/
+  // res.json(courses)
+})
+
+App.get("/api/courses", async(req,res) => {
+  const response = await dbCourses.findCourses();
+  // console.log(response)
+  res.json(response)
+})
+
+// POST ROUTE: Create a new course
+App.get("/api/course/:cid", async (req, res) => {
+
+  const response = await dbCourses.findMyCourse(req.params.cid);
+  if (response.scorecard) {
+    console.log(response)
+    res.json(response);
+  } else {
+    console.log('search for course')
+    console.log(`https://freegolftracker.com/courses/${response.name.replace(/\s/g, '-')}_${req.params.cid}`)
+    let { data } = await axios({
+      method: "GET",
+      // url: "https://www.mscorecard.com/mscorecard/courses.php?CourseName=eagle+creek&Country=USA&SubmitButton=Search",
+      // url: 'https://freegolftracker.com/courses/Point-Mallard_31.htm',
+      url: `https://freegolftracker.com/courses/${response.name.replace(/\s/g, '-')}_${req.params.cid}.htm`,
+    });
+    console.log(data)
+    const $ = cheerio.load(data);
+    var newInfo = {}
+    newInfo.name = response.name
+    newInfo.cid = req.params.cid
+    newInfo.address = {}
+    // console.log($('.container').find('div.col-md-6:nth-child(1)').find('tr:nth-child(1)').text())
+    newInfo.address.street = $('.container').find('div.col-md-6:nth-child(1)').find('tr:nth-child(3)').find('td:nth-child(2)').text().trim()
+    newInfo.address.zip = $('.container').find('div.col-md-6:nth-child(1)').find('tr:nth-child(6)').find('td:nth-child(2)').text().trim()
+    newInfo.address.cityState = $('.container').find('div.col-md-6:nth-child(1)').find('tr:nth-child(4)').find('td:nth-child(2)').text().trim() + ', ' + $('.container').find('div.col-md-6:nth-child(1)').find('tr:nth-child(5)').find('td:nth-child(2)').text().trim()
+    newInfo.url = $('.container').find('div.col-md-6:nth-child(1)').find('tr:nth-child(2)').find('td:nth-child(2)').text().trim()
+
+    let table = "";
+    // if ($("#body").children().length > 0) {
+    let scoreCardTables = $('.container').find("table.table-bordered")
+    // console.log($(scoreCardTables.get(1)).html())
+    let html = $(scoreCardTables.get(0)).html() + '<br/>' + $(scoreCardTables.get(1)).html()
+    table = html !== null ? html.trim() : "";
+    newInfo.scorecardHtml = table
+
+    var scorecard = []
+
+    // var $$ = cheerio.load($(".scorecardtable").html());
+    // console.log($(".scorecardtable").find('tr.nonfocus'))
+    var indexArray = [1,2]
+    // console.log([...Array(9).keys()])
+    // console.log($('.container').find("div.table-responsive").text())
+    let allBtns = $('.container').find("div.table-responsive")
+    for (const index of indexArray) {
+      var i = 1
+      for (const row of $(allBtns.get(index)).find('tr:nth-child(1)').find('td')) {
+        if (!isNaN($(row).text())) {
+          scorecard.push({holeNumber:Number($(row).text()),par:Number($(allBtns.get(index)).find('tr:nth-child(2)').find('td:nth-child(' + i + ')').text()),slope:Number($(allBtns.get(index)).find('tr:nth-child(7)').find('td:nth-child(' + i + ')').text())})
+          // console.log('Hole: ' + $(row).text() + ' Par: ' + $(allBtns.get(index)).find('tr:nth-child(2)').find('td:nth-child(' + i + ')').text())
+        }
+        i++
+      }
+    }
+    newInfo.scorecard = scorecard
+    // console.log(newInfo)
+    var updatedEntry = await dbCourses.updateCourse(newInfo)
+    // console.log(updatedEntry)
+
+    res.json(newInfo);
+  }
+
+  /*let { data } = await axios({
+    method: "GET",
+    // url: "https://www.mscorecard.com/mscorecard/courses.php?CourseName=eagle+creek&Country=USA&SubmitButton=Search",
+    url: 'https://www.mscorecard.com/mscorecard/showcourse.php',
+    params: {
+      cid: req.params.cid,
+    },
+  });
+  const $ = cheerio.load(data);
+  // let og = $("head > meta[property='og:url']").attr("content");
+  // let dbID = og !== undefined ? Number(og.split("=")[1]) : NaN;
+  //   console.log(dbID);
+  let name = $(".page-content").find('h1').first().text().trim();
+  let address = $(".page-content").find('div.col-md-4').text();
+
+let addressObj = {}
+var i = 0
+for (const element of $(".page-content").find('div.col-md-4').contents()) {
+  // console.log(element.type)
+  if (element.type === 'text') {
+    if (i === 0) {
+      var street = $(element).text()
+    }
+    if (i === 2) {
+      console.log($(element).text().split(' ')[0])
+      var zip = $(element).text().split(' ')[0]
+      var cityState = $(element).text().split(' ').slice(1).join(' ')
+    }
+  }
+  i++
+}
+
+  for (const element of $(".page-content").find('div.col-md-8').children()) {
+    if ($(element).find('i').text() == 'desktop_windows') {
+       //  console.log($(element).find('i').text())
+       var url = $(element).find('i').next().text()
+    }
+  }
+  // let url = $(".popup.web-url").text().trim();
+
+  // let scorecardUrl = `https://www.golflink.com/golf-courses/popups/scorecard.aspx?c=${dbID}`;
+  // let scorecard = await (await axios.get(scorecardUrl)).data;
+  // let score = await fetch(scorecardUrl);
+
+  let table = "";
+    let html = $(".scorecardtable").html();
+    table = html !== null ? html.trim() : "";
+
+    // console.log(table);
+
+  var info = {
+    name: name,
+    // address: address,
+    address: {
+      street: street,
+      cityState: cityState,
+      zip: Number(zip),
+    },
+    // slug: req.body.slug,
+    url: url,
+    // zip: Number(req.body.zip),
+    cid: req.params.cid,
+    // scorecardUrl: scorecardUrl,
+    scorecardHtml: table,
+  };
+  console.log(info);
+  res.json(info)*/
+  /*let newCourse = {
+    pin: req.params.cid,
+    course: req.body.course,
+    holes: req.body.holes,
+  };
+  const response = await dbCourses.createCourse(info);
+  res.json(response);*/
+});
+
+// Serve static assets if in production
+if (process.env.NODE_ENV === "production") {
+  const __dirname = Path.resolve();
+  // Set static folder
+  App.use(Express.static("client/build"));
+  App.get("*", (req, res) => {
+    res.sendFile(Path.resolve(__dirname, "client", "build", "index.html"));
+  });
+}
+
+// Listen to port
+App.listen(port, () => console.log(`Server started on port ${port}`));
