@@ -7,7 +7,7 @@ import cheerio from "cheerio";
 
 const App = Express();
 const port = process.env.PORT || 5000;
-axios.defaults.baseURL = process.env.REACT_APP_API_URL || 'https://golf-site-l4f4.onrender.com'// process.env.API_URL;
+// axios.defaults.baseURL = process.env.REACT_APP_API_URL || 'https://zany-pink-dolphin-veil.cyclic.app'// process.env.API_URL;
 
 App.use(Express.json());
 App.use(CORS());
