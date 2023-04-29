@@ -39,4 +39,4 @@
   - course name/type
   - a table of all the players with their strokes & total score.
 <img src="https://user-images.githubusercontent.com/47342503/120408228-9880a380-c31c-11eb-9f99-d2b0612dabf0.jpg" height="500px">
-# Lets-golf
+### Lets-golf
