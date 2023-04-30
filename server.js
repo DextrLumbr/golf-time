@@ -197,7 +197,7 @@ App.get("/api/courses", async(req,res) => {
   /*var theCourse = await connectMongo()
   console.log(theCourse)
   res.json(theCourse)*/
-  // const db = await loadDB();
+  const db = await loadDB();
   const response = await dbCourses.findCourses()// .find().toArray()
   res.json(response)
 
