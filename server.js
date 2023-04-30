@@ -186,10 +186,11 @@ const loadDB = async () => {
     try {
         const client = await MongoClient.connect(process.env.MONGODB_URI,{useUnifiedTopology: true});
         db = client.db('golf-app');
+        const dbCourses = await db.collection('courses')
     } catch (err) {
         Raven.captureException(err);
     }
-    return db;
+    return dbCourses;
 };
 
 App.get("/api/courses", async(req,res) => {
@@ -197,7 +198,7 @@ App.get("/api/courses", async(req,res) => {
   console.log(theCourse)
   res.json(theCourse)*/
   const db = await loadDB();
-  const response = await db.collection('courses').find().toArray()
+  const response = await dbCourses.findCourses()// .find().toArray()
   res.json(response)
 
   /*const response = await dbCourses.findCourses();
