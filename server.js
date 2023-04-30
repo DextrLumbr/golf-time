@@ -4,10 +4,15 @@ import CORS from "cors";
 import Path from "path";
 import axios from "axios";
 import cheerio from "cheerio";
+import MongoClient from "mongodb";
+import mongoose from 'mongoose';
+
 
 const App = Express();
 const port = process.env.PORT || 5000;
 // axios.defaults.baseURL = process.env.REACT_APP_API_URL || 'https://zany-pink-dolphin-veil.cyclic.app'// process.env.API_URL;
+const uri = process.env.MONGODB_URI
+// const client = new MongoClient(uri);
 
 App.use(Express.json());
 App.use(CORS());
@@ -146,10 +151,59 @@ App.get("/api/courses/:name", async(req,res) => {
   // res.json(courses)
 })
 
+/*async function connectMongo() {
+  var client = await MongoClient.connect(process.env.MONGODB_URI, { useUnifiedTopology: true })// .then(client => {
+    .catch(err => { console.log(err); });
+
+    if (!client) {
+      return;
+  }
+
+  try {
+
+    const db = client.db("golf-app");
+    const courseInfo = await db.collection('courses').find().toArray()
+    console.log(courseInfo)
+    return courseInfo
+    // res.json(courseInfo)
+
+  } catch (err) {
+
+         console.log(err);
+
+      } finally {
+
+         client.close();
+      }
+}*/
+
+let db;
+
+const loadDB = async () => {
+    if (db) {
+        return db;
+    }
+    try {
+        const client = await MongoClient.connect(process.env.MONGODB_URI,{useUnifiedTopology: true});
+        db = client.db('golf-app');
+    } catch (err) {
+        Raven.captureException(err);
+    }
+    return db;
+};
+
 App.get("/api/courses", async(req,res) => {
-  const response = await dbCourses.findCourses();
-  // console.log(response)
+  /*var theCourse = await connectMongo()
+  console.log(theCourse)
+  res.json(theCourse)*/
+  const db = await loadDB();
+  const response = await db.collection('courses').find().toArray()
   res.json(response)
+
+  /*const response = await dbCourses.findCourses();
+  console.log(response)
+  res.json(response)*/
+
 })
 
 // POST ROUTE: Create a new course
