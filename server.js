@@ -197,8 +197,8 @@ App.get("/api/courses", async(req,res) => {
   /*var theCourse = await connectMongo()
   console.log(theCourse)
   res.json(theCourse)*/
-  const db = await loadDB();
-  const response = await dbCourses.findCourses()// .find().toArray()
+  // const db = await loadDB();
+  const response = await dbCourses.findCourses();
   res.json(response)
 
   /*const response = await dbCourses.findCourses();
@@ -354,6 +354,13 @@ if (process.env.NODE_ENV === "production") {
     res.sendFile(Path.resolve(__dirname, "client", "build", "index.html"));
   });
 }
-
-// Listen to port
-App.listen(port, () => console.log(`Server started on port ${port}`));
+(async () => { // async function
+  try {
+    await mongoose.connect(uri); // wait for connection
+      // Listen to port
+      App.listen(port, () => console.log(`Server started on port ${port}`));
+    } catch (error) {
+    console.console.log("Something went wrong!!!");
+    console.error(error);
+  }
+})(); // Immediate invoke
