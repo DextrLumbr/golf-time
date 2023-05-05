@@ -60,6 +60,12 @@ function Navbar(props) {
                 <span>About</span>
               </NavLink>
             </li>
+            <li className="nav-text" onClick={showSidebar}>
+              <NavLink to="/courses" activeClassName="active" exact={true}>
+                <FaIcons.FaGolfBall />
+                <span>Courses</span>
+              </NavLink>
+            </li>
             {username ? (
               <>
                 <li className="nav-text" onClick={showSidebar}>
