@@ -59,7 +59,7 @@ const handleChange = (e) => {
       holeRows.push(<td key={i}>{i + 1}</td>);
     }
   } else {*/
-    console.log(detailsDisplay.holes)
+    console.log(detailsDisplay)
     // let holeRows = [];
     for (let i = 0; i < detailsDisplay.holes; i++) {
       holeRows.push(<td key={i}>{i + 1}</td>);
@@ -100,15 +100,16 @@ const handleChange = (e) => {
   // Map out each players score
   const playerMap = detailsDisplay.players.map((player, index) => {
     const scoreMap = holeRows.map((score, index) => (
-      <td key={index}>{player.gameArray[index]}</td>
+      player.adjustedArray[index] ? <td key={index}><sup>{player.gameArray[index]}</sup>/<sup>{player.adjustedArray[index]}</sup></td> : <td key={index}>{player.gameArray[index]}</td>
     ))
     /*const scoreMap = player.gameArray.map((score, index) => (
       <td key={index}>{score}</td>
     ));*/
     const totalScore = player.gameArray.reduce((a, b) => a + b, 0);
+    const totalAdjustedScore = player.adjustedArray.reduce((a, b) => a + b, 0);
     return (
       <tr key={index}>
-        <th className="player-name">{player.username.split('')[0]}</th>
+        <th className="player-name">{player.username.split('')[1]}</th>
         {scoreMap}
         <th className="total">{totalScore}</th>
       </tr>
@@ -118,34 +119,38 @@ const handleChange = (e) => {
   // Map out each players score
   const playerMapOut = detailsDisplay.players.map((player, index) => {
     const scoreMap = frontNine.map((score, index) => (
-      <td key={index}>{player.gameArray[index]}</td>
+      // <td key={index}>{player.gameArray[index]}</td>
+      player.adjustedArray[index] ? <td key={index}><sup>{player.gameArray[index]}</sup>/<sub>{player.adjustedArray[index]}</sub></td> : <td key={index}>{player.gameArray[index]}</td>
     ))
     /*const scoreMap = player.gameArray.map((score, index) => (
       <td key={index}>{score}</td>
     ));*/
     const totalScore = player.gameArray.slice(0,9).reduce((a, b) => a + b, 0);
+    const totalAdjScoreOut = player.adjustedArray.slice(0,9).reduce((a, b) => a + b, 0);
     return (
       <tr key={index}>
         <th className="player-name">{player.username.split('')[0]}</th>
         {scoreMap}
-        <th className="total">{totalScore}</th>
+        <th className="total"><sup>{totalScore}</sup>/<sub>{totalAdjScoreOut}</sub></th>
       </tr>
     );
   });
 
   const playerMapIn = detailsDisplay.players.map((player, index) => {
     const scoreMap = backNine.map((score, index) => (
-      <td key={index}>{player.gameArray.slice(9)[index]}</td>
+      // <td key={index}>{player.gameArray.slice(9)[index]}</td>
+      player.adjustedArray.slice(9)[index] ? <td key={index}><sup>{player.gameArray.slice(9)[index]}</sup>/<sub>{player.adjustedArray.slice(9)[index]}</sub></td> : <td key={index}>{player.gameArray.slice(9)[index]}</td>
     ))
     /*const scoreMap = player.gameArray.map((score, index) => (
       <td key={index}>{score}</td>
     ));*/
     const totalScore = player.gameArray.slice(9).reduce((a, b) => a + b, 0);
+    const totalAdjScoreIn = player.adjustedArray.slice(9).reduce((a, b) => a + b, 0);
     return (
       <tr key={index}>
         <th className="player-name">{player.username.split('')[0]}</th>
         {scoreMap}
-        <th className="total">{totalScore}</th>
+        <th className="total"><sup>{totalScore}</sup>/<sub>{totalAdjScoreIn}</sub></th>
       </tr>
     );
   });

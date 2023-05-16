@@ -78,7 +78,9 @@ App.patch("/api/games/:pin", async (req, res) => {
   // Retrieve player data
   let playerData = {
     username: req.body.username,
+    handicap: req.body.handicap,
     gameArray: req.body.gameArray,
+    adjustedArray: req.body.adjustedArray
   };
   const response = await dbGames.updateOne(pin, playerData);
   res.json(response);

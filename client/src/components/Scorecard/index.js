@@ -10,6 +10,7 @@ function Scorecard(props) {
   const history = useHistory();
 
   useEffect(() => {
+    console.log(props)
     const sessionGame = () => {
       // If rejoining an unfinished game, display the saved values
       if (sessionStorage.getItem("game_pin") === gameData.pin) {
@@ -79,13 +80,31 @@ function Scorecard(props) {
   // Finish game and submit score to the database
   const finishGame = async () => {
     let pushScore = [];
+    var pushAdjust = new Array(18).fill(null);
     // Only send # of strokes to the database
     for (let score of gameArray) {
       pushScore.push(score.strokes);
     }
+
+    var x = 1
+    while (x<=gameData.handicap) {
+      if (x>18) {
+        var holeNumb = gameData.scorecard.find(y=>y.slope == x-18).holeNumber
+        pushAdjust[holeNumb-1] = pushAdjust[holeNumb-1]-1
+        // console.log(scores[holeNumb-1])
+      } else {
+        var holeNumb = gameData.scorecard.find(y=>y.slope == x).holeNumber
+        pushAdjust[holeNumb-1] = pushScore[holeNumb-1] - 1
+        // console.log(scorecard.find(y=>y.slope == x).holeNumber)
+      }
+      // console.log('hole ' + holeNumb  + 'new score is ' + pushAdjust[holeNumb-1] + ' instead of ' +  pushScore[holeNumb-1])
+      x++
+    }
     const response = await Axios.patch(`/api/games/${gameData.pin}`, {
       username: gameData.username,
+      handicap: gameData.handicap,
       gameArray: pushScore,
+      adjustedArray: pushAdjust,
     });
     if (response.data) {
       Axios.patch(`/api/account/${gameData.username}`, {

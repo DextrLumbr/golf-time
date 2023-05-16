@@ -12,7 +12,8 @@ function Login(props) {
     e.preventDefault();
     const response = await Axios.get(`/api/account/${inputUsername}`);
     if (response.data) {
-      props.appLogin(response.data.username, rememberMe);
+      console.log(response.data)
+      props.appLogin(response.data.username, rememberMe, response.data.handicap);
     } else {
       setModalOpen(true);
     }

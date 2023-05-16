@@ -11,15 +11,16 @@ import { IconContext } from "react-icons";
 function Course(props) {
   const [courseInfo, setCourseInfo] = useState("");
   const [gameData, setGameData] = useState(null);
-  const { username } = props;
+  const { username, handicap } = props;
   const { cid } = useParams()
   console.log(cid)
-  console.log(props)
+  console.log(handicap)
   let history = useHistory();
 
   const handleGameData = (gameData) => {
     setGameData({
       username: username,
+      handicap: handicap,
       pin: gameData.pin,
       holes: gameData.holes,
       course: gameData.course,

@@ -11,25 +11,34 @@ import History from "./pages/History";
 
 function App() {
   const [username, setUsername] = useState("");
+  const [handicap, setHandicap] = useState("");
 
   useEffect(() => {
     const localUsername = () => {
       if (localStorage.getItem("username")) {
         setUsername(localStorage.getItem("username"));
+        if (localStorage.getItem("handicap")) {
+          setHandicap(localStorage.getItem("handicap"))
+        }
       }
     };
     localUsername();
   }, []);
 
-  const appLogin = (passUsername, rememberMe) => {
+  const appLogin = (passUsername, rememberMe, playerHandicap) => {
     setUsername(passUsername);
+    setHandicap(playerHandicap)
     if (passUsername && rememberMe) {
       // Sets username in localStorage if remember me is true
       localStorage.setItem("username", passUsername);
+      if (playerHandicap) {
+        localStorage.setItem("handicap", playerHandicap);
+      }
     }
     // If the logout button is pressed, remove the item from localStorage and sessionStorage
     if (!passUsername) {
       localStorage.removeItem("username");
+      localStorage.removeItem("handicap");
       sessionStorage.clear();
     }
   };
@@ -49,7 +58,7 @@ function App() {
           <Route path="/about" exact component={About} />
           <Route path="/courses" exact component={Courses} />
           <Route path="/course/:cid" exact render={(props) => (
-            <Course {...props} appLogin={appLogin} username={username} />
+            <Course {...props} appLogin={appLogin} username={username} handicap={handicap} />
           )} /*component={Course}*/ />
           <Route
             path="/history"
