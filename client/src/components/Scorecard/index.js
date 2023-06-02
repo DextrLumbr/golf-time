@@ -20,10 +20,11 @@ function Scorecard(props) {
         let newArray = [];
         console.log(gameData)
         if (gameData.scorecard) {
-          for (let i = 0; i < gameData.scorecard.length; i++) {
+          var holeCount = gameData.holes ? gameData.holes : gameData.scorecard.length
+          for (let i = 0; i < holeCount; i++) {
             newArray.push({
               holeNumber: i + 1,
-              strokes: 0,
+              strokes: undefined,
               par: gameData.scorecard[i].par
             });
           }
@@ -65,6 +66,7 @@ function Scorecard(props) {
 
   // Update the score on change to session storage and useState
   const updateScore = (strokes, currentHole) => {
+    // console.log(strokes)
     if (Number.isInteger(strokes)) {
       // Match the updating input with the array
       let findH = gameArray.find(
@@ -73,43 +75,118 @@ function Scorecard(props) {
       let newData = [...gameArray];
       findH.strokes = strokes;
       setGameArray(newData);
+      console.log(newData)
       sessionStorage.setItem("game_score", JSON.stringify(newData));
     }
   };
 
+  const updateHandicap = async (gameData) => {
+    const userHistory = await Axios.get(`/api/account/${gameData.username}`);
+    let gameHistory = userHistory.data.games;
+    if (gameHistory.length > 0) {
+      let passData = { pinArray: gameHistory };
+      const arrayData = await Axios.get(`/api/player/games`, {
+        params: passData,
+      });
+      // arrayData
+      arrayData.data.games.sort((a, b) => new Date(b.date) - new Date(a.date));
+        // console.log(arrayData.data.games)
+      var arrayOfAvgs = []
+      arrayData.data.games.slice(0,20).map((obj,index) => {
+        // find strokes over park
+        if (obj.holes === 9) {
+          arrayOfAvgs.push( (obj.players.find(x=>x.username == gameData.username).playerMatchData.map(x=>x.strokes).reduce((partialSum, a) => partialSum + a, 0) - obj.players.find(x=>x.username == gameData.username).playerMatchData.map(x=>x.par).reduce((partialSum, a) => partialSum + a, 0))*2 )
+        } else {
+          arrayOfAvgs.push(obj.players.find(x=>x.username == gameData.username).playerMatchData.map(x=>x.strokes).reduce((partialSum, a) => partialSum + a, 0) - obj.players.find(x=>x.username == gameData.username).playerMatchData.map(x=>x.par).reduce((partialSum, a) => partialSum + a, 0))
+        }
+      })
+      var top8 = arrayOfAvgs.sort((a, b) => {return a-b}).slice(0,8)
+      console.log(top8.reduce((a, b) => a + b)/top8.length)
+      const handicapRoute = await Axios.patch(`/api/player/${gameData.username}`, {
+        handicap: top8.reduce((a, b) => a + b)/top8.length,
+      });
+      console.log(handicapRoute)
+      // sessionStorage.removeItem("handicap");
+      sessionStorage.setItem("handicap", Number(Math.round(top8.reduce((a, b) => a + b)/top8.length)));
+      // setGameData(arrayData.data.games);
+    }
+  }
+
   // Finish game and submit score to the database
   const finishGame = async () => {
     let pushScore = [];
-    var pushAdjust = new Array(18).fill(null);
+    var holeCount = Number(gameArray.filter(x=>x.strokes !== undefined).length)
+    var pushAdjust = new Array(holeCount).fill(null);
+    console.log(holeCount)
     // Only send # of strokes to the database
     for (let score of gameArray) {
-      pushScore.push(score.strokes);
+      if (score.strokes != undefined) {
+        pushScore.push(score.strokes);
+      }
     }
 
-    var x = 1
-    while (x<=gameData.handicap) {
-      if (x>18) {
-        var holeNumb = gameData.scorecard.find(y=>y.slope == x-18).holeNumber
+    var holesToCount = gameArray.filter(w=>w.strokes).map(w=>w.holeNumber)
+    // console.log(scorecard.filter(y=>holesToCount.includes(y.holeNumber )).sort((a,b) => a.slope-b.slope))
+    var filteredScorecard = gameData.scorecard.filter(y=>holesToCount.includes(y.holeNumber )).sort((a,b) => a.slope-b.slope)
+
+    var x = 0
+    var i = 0
+    var currHandicap = holeCount > 9 ? gameData.handicap : gameData.handicap/2
+    while (x<currHandicap) {
+      // console.log(i)
+      if (gameArray.find(y=>y.holeNumber == filteredScorecard[i].holeNumber).hcpStrokes) {
+        gameArray.find(y=>y.holeNumber == filteredScorecard[i].holeNumber).hcpStrokes = gameArray.find(y=>y.holeNumber == filteredScorecard[i].holeNumber).hcpStrokes+1
+      } else {
+        // add to adjScore
+        gameArray.find(y=>y.holeNumber == filteredScorecard[i].holeNumber).hcpStrokes = 1 // gameArray.find(y=>y.holeNumber == filteredScorecard[i].holeNumber).strokes - 1
+      }
+      // if i/handicap == 1 reset i else continue
+      i >= filteredScorecard.length-1 ? i = 0 : i++
+      x++
+    }
+    console.log(gameArray.filter(w=>w.strokes))
+
+    /*var x = 1
+    var currHandicap = holeCount > 9 ? gameData.handicap : gameData.handicap/2
+    while (x<=currHandicap) {
+      // console.log(gameData)
+      if (x>currHandicap) {
+        var holeNumb = gameData.scorecard.find(y=>y.slope == x-currHandicap).holeNumber
         pushAdjust[holeNumb-1] = pushAdjust[holeNumb-1]-1
         // console.log(scores[holeNumb-1])
       } else {
-        var holeNumb = gameData.scorecard.find(y=>y.slope == x).holeNumber
-        pushAdjust[holeNumb-1] = pushScore[holeNumb-1] - 1
-        // console.log(scorecard.find(y=>y.slope == x).holeNumber)
+        if (gameData.scorecard.find(y=>y.slope == Number(x))) {
+          var holeNumb = gameData.scorecard.find(y=>y.slope == x).holeNumber
+          var holesToCount = gameArray.filter(w=>w.strokes).map(w=>w.holeNumber)
+          pushAdjust[holeNumb-1] = pushScore[holeNumb-1] - 1
+          // gameData.scorecard.filter(y=>holesToCount.includes(y.holeNumber ))
+          // gameArray.filter(y=>y.holeNumber )
+          gameArray.find(y=>y.holeNumber == holeNumb).adjStrokes = gameArray.find(y=>y.holeNumber == holeNumb).strokes - 1
+        }
+        // console.log(gameData.scorecard.find(y=>y.slope == x).holeNumber)
       }
       // console.log('hole ' + holeNumb  + 'new score is ' + pushAdjust[holeNumb-1] + ' instead of ' +  pushScore[holeNumb-1])
       x++
     }
+    console.log(gameArray)*/
+
     const response = await Axios.patch(`/api/games/${gameData.pin}`, {
       username: gameData.username,
       handicap: gameData.handicap,
       gameArray: pushScore,
-      adjustedArray: pushAdjust,
+      playerData: gameArray.filter(w=>w.strokes),
+      // adjustedArray: pushAdjust,
+      holes: holeCount
     });
     if (response.data) {
-      Axios.patch(`/api/account/${gameData.username}`, {
+
+      const addPin = await Axios.patch(`/api/account/${gameData.username}`, {
         newPin: gameData.pin,
       });
+      if (addPin.data) {
+        // check handicap
+        updateHandicap(gameData)
+      }
       // Clear session storage on submit and also redirect the user to the game history page
       sessionStorage.removeItem("game_score");
       sessionStorage.removeItem("game_pin");

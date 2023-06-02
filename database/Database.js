@@ -1,4 +1,19 @@
 import MongoClient from "mongodb";
+import jwt from 'jsonwebtoken';
+import bcrypt from'bcrypt';
+import axios from "axios";
+// import createJWT from "../utils/auth" "./database/Database.js";
+import winkNLP from 'wink-nlp';
+// Load english language model — light version.
+import its from 'wink-nlp/src/its.js';
+import as from 'wink-nlp/src/as.js';
+import model from 'wink-eng-lite-model';
+const nlp = winkNLP(model);
+import BM25Vectorizer from 'wink-nlp/utilities/bm25-vectorizer.js';
+import SummaryTool from 'node-summary';
+
+const emailRegexp = /^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*$/;
+
 
 import dotenv from "dotenv";
 dotenv.config();
@@ -14,17 +29,49 @@ export default class Database {
   }
 
   // Connect to the database
-  async connect(collection) {
+  async connect(collection,db) {
     this.connection = await MongoClient.connect(process.env.MONGODB_URI, {
       useUnifiedTopology: true,
     });
-    // Select golf-app database
-    this.database = this.connection.db("golf-app");
+    if (db) {
+      this.database = this.connection.db(db);
+    } else {
+      // Select golf-app database
+      this.database = this.connection.db("golf-app");
+    }
     // Select the collection
     this.collection = this.database.collection(collection);
   }
 
   // Collection: "players"
+
+  async addContent(obj) {
+    let insert = await this.collection.insertOne({url: obj.url, date:Date()})
+    console.log(insert)
+    return insert;
+  }
+
+  // createUser() Create a user in the users collection
+  async createUser(userObj) {
+    console.log(userObj)
+    let findAccount = await this.collection.findOne({email: userObj.email})
+    if(findAccount){
+       // return res.status(422).json({ errors: [{ user: "email already exists" }] });
+       return { errors: [{ user: "email already exists" }] };
+    }else {
+      const userSave = {
+        name: userObj.name,
+        email: userObj.email,
+        password: userObj.password,
+      };
+      const salt = await bcrypt.genSalt(10)
+      const hashedPassword = await bcrypt.hash(userSave.password, salt)
+      console.log(hashedPassword)
+      userSave.password = hashedPassword;
+      await this.collection.insertOne(userSave);
+      return { userSave };
+    }
+  }
 
   // createAccount() Create an account in the players collection
   async createAccount(username) {
@@ -39,6 +86,37 @@ export default class Database {
       this.collection.insertOne(newAccount);
       return { username: username };
     }
+  }
+
+  async signIn(userObj) {
+    const user = await this.collection.findOne({ email: userObj.email })
+    if (!user) {
+          return {errors: [{ user: "not found" }]};
+        } else {
+          console.log(user)
+          // return user
+          const isMatch = await bcrypt.compare(userObj.password, user.password)
+          if (!isMatch) {
+            return {errors: [{ password:"incorrect" }]};
+          }
+
+          const access_token = jwt.sign({payload: { email:user.email, id: user._id, duration: 3600}}, process.env.TOKEN_SECRET);
+          // return 'yes'
+          // console.log(access_token)
+
+          /*let access_token = createJWT(
+            user.email,
+            user._id,
+            3600
+          );*/
+          var decoded = await jwt.verify(access_token, process.env.TOKEN_SECRET)
+          if (decoded) {
+            axios.defaults.headers.common["Authorization"] = 'Bearer ' + access_token;
+            return {access_token: access_token}
+          } else {
+            return {error:"something went wrong"}
+          }
+        }
   }
 
   // readAccount() Find account in players collection
@@ -152,6 +230,13 @@ export default class Database {
     }
   }
 
+  async updateHandicap(username,handicap) {
+    if (this.collection != null) {
+      const changeHandicap = await this.collection.updateOne({username:username}, {$set:{handicap:Number(Math.round(handicap))}})
+      return changeHandicap
+    }
+  }
+
   // readOne() Retrieve a game based on the pin number
   async readOne(pin) {
     if (this.collection != null) {
@@ -177,17 +262,134 @@ export default class Database {
   }
 
   // updateOne() Add player score within game
-  async updateOne(pin, playerData) {
+  async updateOne(pin, playerData,holeCount) {
     if (this.collection != null) {
       let updateGame = await this.collection.updateOne(
         { pin: pin },
-        { $push: { players: playerData } }
+        { $push: { players: playerData }, $set: {holes: Number(holeCount)} }
       );
       // If the update was successful, return the data
       if (updateGame.modifiedCount > 0) {
         return playerData;
       }
     }
+  }
+
+  async getArticleSummary(article) {
+    if (article.content) {
+      article.content = article.content.replace( /(<([^>]+)>)/ig, '')
+
+      var patterns = [
+        {
+          name: 'nounPhrase',
+          patterns: [ '[PROPN] [|PROPN] [|PROPN] [|PROPN]' ]
+        },
+        {
+          name: 'nounPhrase',
+          patterns: [ '[PROPN] [ADJ|PROPN] [|PROPN] [|PROPN]' ]
+        },
+          {
+          name: 'nounPhrase',
+          patterns: [ '[PROPN|ADJ] [PROPN]' ]
+        },
+        {
+          name: 'nounPhrase',
+          patterns: [ '[PROPN] [CARDINAL]' ]
+        },
+        /*{
+          name: 'simpleADJ',
+          patterns: [ '[ADJ]' ]
+        },*/
+        { name: 'adjectiveNounPair', patterns: [ 'ADJ NOUN' ] }
+      ];
+
+      var patternCount = nlp.learnCustomEntities( patterns, { matchValue: false, useEntity: true, usePOS: true } );
+
+      const articleDoc = nlp.readDoc(article.content);
+      var tfObj = articleDoc.tokens().out(its.normal, as.bow)
+      // console.log(tfObj)
+      const bmYo = BM25Vectorizer()
+      articleDoc.sentences().out().forEach( (docs) =>  bmYo.learn(
+      // corpus.forEach( (docs) =>  bm25.learn(
+              nlp.readDoc(docs)
+              .tokens()
+              .out(its.normal)
+              )
+          );
+      // let terms = bmYo.vectorOf(nlp.readDoc(article.content).tokens().out(its.idf));
+
+      var idfObj = {}
+      let terms = bmYo.out(its.idf);
+      // console.log(terms)
+      for (let term in terms) {
+          // console.log(`${terms[term][0]} =>  ${terms[term][1]}`)
+          idfObj[terms[term][0]] = terms[term][1]
+      }
+      // console.log(idfObj)
+      // getUniqueTerms()
+          // console.log(bm25.out(its.idf))
+          const sentenceCount = Math.round(articleDoc.sentences().out().length*.2) > 2 ? Math.round(articleDoc.sentences().out().length*.2) : 3
+          console.log(Math.round(articleDoc.sentences().out().length*.2))
+          SummaryTool.getSortedSentences(article.content,sentenceCount,function(err, summary) {
+            if(err) {
+              console.log("err is ", err)
+              resolve('Error')
+            }
+            else {
+              var comps = {}
+              // console.log(summary)
+              summary = [...new Set(summary)];
+              console.log(summary)
+              let content = []
+            for (const sentence of summary) {
+              console.log(sentence)
+              let contentObj = {}
+              contentObj.sentence = sentence
+              let sentenceArray = []
+              let phrases = nlp.readDoc(sentence).customEntities().out(its.detail)
+              for (const phrase of phrases) {
+                console.log(phrases)
+                var words = phrase.value.split(' ')
+                var tdIdfObj = {}
+                var totalIdf = 0
+                let theWord = ''
+                let wordObj = {}
+                for (var word of words) {
+                  console.log(word)
+                  theWord += word + ' '
+                  for (const property in tfObj) {
+                    if (property == word.toLowerCase()) {
+                      var TF = tfObj[property]
+                      // console.log(`${property}: ${tfObj[property]}`)
+                    }
+                  }
+
+                  for (const property in idfObj) {
+                    if (property == word.toLowerCase()) {
+                      var IDF = idfObj[property]
+                      // console.log(`${property}: ${idf[property]}`)
+                    }
+                  }
+                  totalIdf += TF*IDF // .push(TF*IDF)
+                  // console.log(totalIdf)
+                }
+                wordObj.word = theWord.trim()
+                wordObj.TDIDF = totalIdf
+                // console.log(wordObj)
+                // console.log(totalIdf)
+                sentenceArray.push(wordObj)
+              }
+              // console.log(sentenceArray)
+              contentObj.tags = sentenceArray
+              content.push(contentObj)
+            }
+            article.summary = content
+            console.log(article)
+            return article
+              // resolve(summary)
+            }
+          })
+      }
   }
 
   close() {

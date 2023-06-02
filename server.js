@@ -6,6 +6,9 @@ import axios from "axios";
 import cheerio from "cheerio";
 import MongoClient from "mongodb";
 import mongoose from 'mongoose';
+import bodyParser from 'body-parser';
+// import checkAuth from "./middlewares/check-auth.js";
+import { extract } from '@extractus/article-extractor'
 
 
 const App = Express();
@@ -16,6 +19,66 @@ const uri = process.env.MONGODB_URI
 
 App.use(Express.json());
 App.use(CORS());
+App.use(bodyParser.json());
+
+const dbContent = new Database();
+dbContent.connect("myContent","content");
+
+App.post("/api/content/add", async (req,res) => {
+  console.log(req.body)
+  // var article = await extract(req.body.url);
+  const response = await dbContent.addContent(req.body);
+  console.log(response)
+  res.json(response);
+  // res.json('yea')
+})
+
+App.post("/api/article/create", async (req,res) => {
+  console.log(req.body)
+  if (req.body.content) {
+    var sum = await dbContent.getArticleSummary(req.body)
+    res.json(req.body)
+  } else {
+    res.json({error: 'article must have content'})
+  }
+})
+
+App.get("/api/article/:url", async (req, res) => {
+  console.log(req.params)
+  try {
+    var article = await extract(req.params.url);
+    console.log(article)
+    var sum = await dbContent.getArticleSummary(article)
+    // console.log(sum)
+    } catch(e) {
+      // console.log('Catch an error: ', e)
+      var article = null
+      console.log({error:'could not scrape'})
+    }
+
+  res.json(article)
+  // res.status(200).send('some text')
+})
+
+// Routes for "users" collection
+const dbUsers = new Database();
+dbUsers.connect("users");
+
+App.post("/api/user/create", async (req, res) => {
+  let userObj = req.body;
+  console.log(req.body)
+  const response = await dbUsers.createUser(userObj);
+  console.log(response)
+  res.json(response);
+})
+
+App.post("/api/user/signin", async (req, res) => {
+  let userObj = req.body;
+  console.log(req.header)
+  const response = await dbUsers.signIn(userObj);
+  console.log(response)
+  res.json(response);
+})
 
 // Routes for "players" collection
 const dbPlayers = new Database();
@@ -24,6 +87,7 @@ dbPlayers.connect("players");
 // POST ROUTE: Create a new account
 App.post("/api/account/create", async (req, res) => {
   let username = req.body.username;
+  console.log(req.body)
   const response = await dbPlayers.createAccount(username);
   res.json(response);
 });
@@ -72,6 +136,14 @@ App.get("/api/player/games", async (req, res) => {
   res.json(response);
 });
 
+// PATCH ROUTE: Update player handicap
+App.patch("/api/player/:username", async (req, res) => {
+  let username = req.params.username
+  let handicap = req.body.handicap
+  const response = await dbPlayers.updateHandicap(username,handicap)
+  res.json(response);
+})
+
 // PATCH ROUTE: Add a player to the game
 App.patch("/api/games/:pin", async (req, res) => {
   let pin = req.params.pin;
@@ -80,9 +152,10 @@ App.patch("/api/games/:pin", async (req, res) => {
     username: req.body.username,
     handicap: req.body.handicap,
     gameArray: req.body.gameArray,
-    adjustedArray: req.body.adjustedArray
+    // adjustedArray: req.body.adjustedArray,
+    playerMatchData: req.body.playerData
   };
-  const response = await dbGames.updateOne(pin, playerData);
+  const response = await dbGames.updateOne(pin, playerData,req.body.holes);
   res.json(response);
 });
 
@@ -214,7 +287,7 @@ App.get("/api/course/:cid", async (req, res) => {
 
   const response = await dbCourses.findMyCourse(req.params.cid);
   if (response.scorecard) {
-    console.log(response)
+    // console.log(response)
     res.json(response);
   } else {
     console.log('search for course')
@@ -225,7 +298,7 @@ App.get("/api/course/:cid", async (req, res) => {
       // url: 'https://freegolftracker.com/courses/Point-Mallard_31.htm',
       url: `https://freegolftracker.com/courses/${response.name.replace(/\s/g, '-')}_${req.params.cid}.htm`,
     });
-    console.log(data)
+    // console.log(data)
     const $ = cheerio.load(data);
     var newInfo = {}
     newInfo.name = response.name
@@ -261,6 +334,31 @@ App.get("/api/course/:cid", async (req, res) => {
           // console.log('Hole: ' + $(row).text() + ' Par: ' + $(allBtns.get(index)).find('tr:nth-child(2)').find('td:nth-child(' + i + ')').text())
         }
         i++
+      }
+    }
+    var x = 0
+    for (const cap of $('.container').find("td:contains('Handicap')").first()) {
+      // console.log($(cap).text())
+      // console.log($(cap).nextUntil('tr').text())
+      // console.log($(cap).nextUntil('tr').length)
+      // console.log($(cap).next('tr:nth-child(' + (x+1) + ')').text())
+      for (const capNumb of $(cap).nextUntil('tr')) {
+        if ($(capNumb).text().trim()) {
+          scorecard[x].slope = Number($(capNumb).text().trim())
+          x++
+        }
+      }
+    }
+    for (const cap of $('.container').find("td:contains('Handicap')").last()) {
+      // console.log($(cap).text())
+      // console.log($(cap).nextUntil('tr').text())
+      // console.log($(cap).nextUntil('tr').length)
+      // console.log($(cap).next('tr:nth-child(' + (x+1) + ')').text())
+      for (const capNumb of $(cap).nextUntil('tr')) {
+        if ($(capNumb).text().trim()) {
+          scorecard[x].slope = Number($(capNumb).text().trim())
+          x++
+        }
       }
     }
     newInfo.scorecard = scorecard

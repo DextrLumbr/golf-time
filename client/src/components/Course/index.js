@@ -13,14 +13,14 @@ function Course(props) {
   const [gameData, setGameData] = useState(null);
   const { username, handicap } = props;
   const { cid } = useParams()
-  console.log(cid)
-  console.log(handicap)
+  // console.log(cid)
+  console.log(sessionStorage.getItem('handicap'))
   let history = useHistory();
 
   const handleGameData = (gameData) => {
     setGameData({
       username: username,
-      handicap: handicap,
+      handicap: sessionStorage.getItem('handicap'),
       pin: gameData.pin,
       holes: gameData.holes,
       course: gameData.course,

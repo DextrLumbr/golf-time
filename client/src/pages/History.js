@@ -22,6 +22,9 @@ function History(props) {
           const arrayData = await Axios.get(`/api/player/games`, {
             params: passData,
           });
+
+          arrayData.data.games.sort((a, b) => new Date(b.date) - new Date(a.date));
+
           setGameData(arrayData.data.games);
         }
       } else {

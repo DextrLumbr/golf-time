@@ -52,7 +52,7 @@ function App() {
             path="/"
             exact
             render={(props) => (
-              <Play {...props} appLogin={appLogin} username={username} />
+              <Play {...props} appLogin={appLogin} username={username} handicap={handicap} />
             )}
           />
           <Route path="/about" exact component={About} />

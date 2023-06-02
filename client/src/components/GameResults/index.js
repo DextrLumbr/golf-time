@@ -18,8 +18,9 @@ function GameResults(props) {
   };*/
 
 var checkDate = new Date(date);
-const defaultValue = checkDate.toLocaleDateString('en-NY');
+const defaultValue = checkDate// .toLocaleDateString('en-NY');
 const handleChange = (e) => {
+    console.log(e.target.value)
     setDate(e.target.value);
     setIsFormVisible(false)
   };
@@ -43,11 +44,12 @@ const handleChange = (e) => {
           }));*/
           // setDate(detailsDisplay.date)
           setIsFormVisible(true)
-          console.log(date)
+          console.log(new Date(date).toISOString())
+          // "<YYYY-mm-ddTHH:MM:ssZ>"
       }
 
   // Create top row based on how many holes there were
-  let holeRows = [];
+  // let holeRows = [];
   let frontNine = [];
   let backNine = [];
   let parRowsOut = []
@@ -60,8 +62,14 @@ const handleChange = (e) => {
     }
   } else {*/
     console.log(detailsDisplay)
-    // let holeRows = [];
+    // detailsDisplay.players[0].playerMatchData.length
     for (let i = 0; i < detailsDisplay.holes; i++) {
+      // holeRows.push(<td key={i}>{i + 1}</td>);
+      parRowsOut.push(<td key={i}>{detailsDisplay.scorecard[i].par}</td>)
+    }
+    var holeRows = detailsDisplay.players[0].playerMatchData.map((obj,i) => <td key={i}>{obj.holeNumber}</td>)
+    // let holeRows = [];
+    /*for (let i = 0; i < detailsDisplay.holes; i++) {
       holeRows.push(<td key={i}>{i + 1}</td>);
       if (i>8) {
         backNine.push(<td key={i}>{i + 1}</td>)
@@ -83,7 +91,7 @@ const handleChange = (e) => {
 
   // const parScore = detailsDisplay.scorecard.reduce((a, b) => a.par + b.par, 0);
   const parScore = detailsDisplay.scorecard.slice(0,9).reduce(function (acc, obj) { return acc + obj.par; }, 0)
-  parRows.push(<td key={9}>{parScore}</td>)
+  parRows.push(<td key={9}>{parScore}</td>)*/
   // const frontNine = detailsDisplay.holes.slice(0,8)
   /*let holeRows = [];
   for (let i = 0; i < detailsDisplay.holes/2; i++) {
@@ -93,20 +101,24 @@ const handleChange = (e) => {
   // Sorting player array by total score
   detailsDisplay.players.sort(
     (a, b) =>
-      a.gameArray.reduce((c, d) => c + d, 0) -
-      b.gameArray.reduce((c, d) => c + d, 0)
+      a.playerMatchData.reduce((c, d) => c.strokes + d, 0) -
+      b.playerMatchData.reduce((c, d) => c.strokes + d, 0)
   );
 
   // Map out each players score
   const playerMap = detailsDisplay.players.map((player, index) => {
-    const scoreMap = holeRows.map((score, index) => (
-      player.adjustedArray[index] ? <td key={index}><sup>{player.gameArray[index]}</sup>/<sup>{player.adjustedArray[index]}</sup></td> : <td key={index}>{player.gameArray[index]}</td>
-    ))
-    /*const scoreMap = player.gameArray.map((score, index) => (
-      <td key={index}>{score}</td>
-    ));*/
-    const totalScore = player.gameArray.reduce((a, b) => a + b, 0);
-    const totalAdjustedScore = player.adjustedArray.reduce((a, b) => a + b, 0);
+    // console.log(player.playerMatchData)
+
+    const scoreMap = player.playerMatchData.map((obj,index) =>
+      // console.log(obj.strokes);
+      <td key={index}>{obj.strokes}</td>
+      // obj.strokes;
+    )
+
+    // const scoreMap = player.playerMatchData.map((x,index)=> <td key={index}>{x.strokes}</td>)
+    const totalScore = player.playerMatchData.reduce((accum, obj) => accum + obj.strokes, 0); // player.playerMatchData.reduce((a, b) => a.strokes + b.strokes, 0);
+    // console.log(scoreMap)
+
     return (
       <tr key={index}>
         <th className="player-name">{player.username.split('')[1]}</th>
@@ -116,15 +128,95 @@ const handleChange = (e) => {
     );
   });
 
+  // var scorecardContent = []
+  // var playerScore = []
+  var holeCount = detailsDisplay.holes> 9 ? 2 : 1
+  // var holeRowss = holeCount == 2 ? detailsDisplay.players[0].playerMatchData.slice(0,9).map((obj,i) => <td key={i}>{obj.holeNumber}</td>) : detailsDisplay.players[0].playerMatchData.slice(9).map((obj,i) => <td key={i}>{obj.holeNumber}</td>)
+  // var parRowssOut = holeCount == 2 ? detailsDisplay.players[0].playerMatchData.slice(0,9).map((obj,i) => <td key={i}>{obj.par}</td>) : detailsDisplay.players[0].playerMatchData.slice(9).map((obj,i) => <td key={i}>{obj.par}</td>)
+  const scorecard = new Array(holeCount).fill(null).map((x,rayIndex) => {
+    var playerScore = []
+    var holeRowss = rayIndex == 0 ? detailsDisplay.players[0].playerMatchData.slice(0,9).map((obj,i) => <td key={i}>{obj.holeNumber}</td>) : detailsDisplay.players[0].playerMatchData.slice(9).map((obj,i) => <td key={i}>{obj.holeNumber}</td>)
+    var parRowssOut = rayIndex == 0 ? detailsDisplay.players[0].playerMatchData.slice(0,9).map((obj,i) => <td key={i}>{obj.par}</td>) : detailsDisplay.players[0].playerMatchData.slice(9).map((obj,i) => <td key={i}>{obj.par}</td>)
+    var parTotal = rayIndex == 0 ? detailsDisplay.players[0].playerMatchData.slice(0, 9).map((obj,i) => obj.par).reduce((a, b) => a + b, 0) : detailsDisplay.players[0].playerMatchData.slice(9).map((obj,i) => obj.par).reduce((a, b) => a + b, 0)
+    // make table here
+    detailsDisplay.players.sort(
+      (a, b) =>
+        a.playerMatchData.reduce((c, d) => c + d.strokes, 0) - b.playerMatchData.reduce((c, d) => c + d.strokes, 0)
+    );
+    detailsDisplay.players.map((player, index) => {
+      const playerScoreMap = rayIndex == 0 ? player.playerMatchData.slice(0,9).map((obj,i) =>// {
+        // console.log(obj.strokes);
+        <td key={i}>{obj.strokes}</td>
+        // obj.strokes;
+      ) : player.playerMatchData.slice(9).map((obj,i) =>// {
+        // console.log(obj.strokes);
+        <td key={i}>{obj.strokes}</td>
+        // obj.strokes;
+      )
+      var totalScore = rayIndex == 0 ? player.playerMatchData.slice(0, 9).reduce((accum, obj) => accum + obj.strokes, 0) : player.playerMatchData.slice(9).reduce((accum, obj) => accum + obj.strokes, 0)
+      // var holeRowss = rayIndex == 0 ? player.playerMatchData.slice(9).map((obj,i) => <td key={i}>{obj.holeNumber}</td>) : player.playerMatchData.slice(0,9).map((obj,i) => <td key={i}>{obj.holeNumber}</td>)
+      // var parRowsOut = rayIndex == 0 ? player.playerMatchData.slice(9).map((obj,i) => <td key={i}>{obj.par}</td>) : player.playerMatchData.slice(0,9).map((obj,i) => <td key={i}>{obj.par}</td>) // <td key={i}>{detailsDisplay.scorecard[i].par}</td>
+      // parRowsOut.push(<td key={'total'}>{player.playerMatchData.map((obj,i) => detailsDisplay.scorecard[i].par).reduce((a, b) => a + b, 0) }</td> )
+      // console.log(parRowsOut)
+      playerScore.push(
+        <tr key={index}>
+          <th className="player-name">{player.username.split('')[1]}</th>
+          {playerScoreMap}
+          <th className="total">{totalScore}</th>
+        </tr>
+        /*<table id="player-scores">
+          <tbody>
+
+          <tr className="heading-row">
+            <th className="hole">Hole</th>
+            {holeRows}
+            <th className="total">Total</th>
+          </tr>
+          <tr>
+            <th className="Par">Par</th>
+            {parRowsOut}
+            {<th className="total">tot</th>}
+          </tr>
+
+            <tr key={index}>
+              <th className="player-name">{player.username.split('')[1]}</th>
+              {playerScoreMap}
+              <th className="total">{totalScore}</th>
+            </tr>
+
+          </tbody>
+        </table>*/
+      )
+    })
+    return (
+      // playerScore
+      <table id="player-scores" key={rayIndex}>
+        <tbody>
+
+        <tr className="heading-row">
+          <th className="hole">Hole</th>
+          {holeRowss}
+          {<th className="total">Total</th>}
+        </tr>
+        <tr>
+          <th className="Par">Par</th>
+          {parRowssOut}
+
+          {<th className="total">{parTotal}</th>}
+        </tr>
+
+        {playerScore}
+        </tbody>
+        </table>
+    )
+  })
+
   // Map out each players score
-  const playerMapOut = detailsDisplay.players.map((player, index) => {
+  /*const playerMapOut = detailsDisplay.players.map((player, index) => {
     const scoreMap = frontNine.map((score, index) => (
       // <td key={index}>{player.gameArray[index]}</td>
       player.adjustedArray[index] ? <td key={index}><sup>{player.gameArray[index]}</sup>/<sub>{player.adjustedArray[index]}</sub></td> : <td key={index}>{player.gameArray[index]}</td>
     ))
-    /*const scoreMap = player.gameArray.map((score, index) => (
-      <td key={index}>{score}</td>
-    ));*/
     const totalScore = player.gameArray.slice(0,9).reduce((a, b) => a + b, 0);
     const totalAdjScoreOut = player.adjustedArray.slice(0,9).reduce((a, b) => a + b, 0);
     return (
@@ -134,26 +226,24 @@ const handleChange = (e) => {
         <th className="total"><sup>{totalScore}</sup>/<sub>{totalAdjScoreOut}</sub></th>
       </tr>
     );
-  });
+  });*/
 
-  const playerMapIn = detailsDisplay.players.map((player, index) => {
+  /*const playerMapIn = detailsDisplay.players.map((player, index) => {
     const scoreMap = backNine.map((score, index) => (
       // <td key={index}>{player.gameArray.slice(9)[index]}</td>
       player.adjustedArray.slice(9)[index] ? <td key={index}><sup>{player.gameArray.slice(9)[index]}</sup>/<sub>{player.adjustedArray.slice(9)[index]}</sub></td> : <td key={index}>{player.gameArray.slice(9)[index]}</td>
     ))
-    /*const scoreMap = player.gameArray.map((score, index) => (
-      <td key={index}>{score}</td>
-    ));*/
     const totalScore = player.gameArray.slice(9).reduce((a, b) => a + b, 0);
+    console.log(totalScore)
     const totalAdjScoreIn = player.adjustedArray.slice(9).reduce((a, b) => a + b, 0);
-    return (
+    return ( totalScore ?
       <tr key={index}>
         <th className="player-name">{player.username.split('')[0]}</th>
         {scoreMap}
         <th className="total"><sup>{totalScore}</sup>/<sub>{totalAdjScoreIn}</sub></th>
-      </tr>
+      </tr> : null
     );
-  });
+  });*/
 
   // console.log(detailsDisplay.scorecard.slice(0,9).reduce(function (acc, obj) { return acc + obj.par; }, 0))
 
@@ -191,25 +281,24 @@ const handleChange = (e) => {
         </form>
 
         <h2 id="table-heading">Scorecard</h2>
-        <table id="player-scores">
+        {scorecard}
+        {/*<table id="player-scores">
           <tbody>
             <tr className="heading-row">
               <th className="hole">Hole</th>
-              {/*holeRows*/}
-              {frontNine}
+              {holeRows}
               <th className="total">Total</th>
             </tr>
             <tr>
               <th className="Par">Par</th>
               {parRowsOut}
-              {/*<th className="total">tot</th>*/}
+              {<th className="total">tot</th>}
             </tr>
-            {/*{parMap}*/}
-            {playerMapOut}
+            {playerMap}
           </tbody>
-        </table>
+        </table>*/}
 
-        {backNine ?
+        {/*
         <table id="player-scores">
           <tbody>
             <tr className="heading-row">
@@ -220,12 +309,10 @@ const handleChange = (e) => {
             <tr>
               <th className="Par">Par</th>
               {parRowsIn}
-              {/*<th className="total">tot</th>*/}
             </tr>
-            {/*{parMap}*/}
             {playerMapIn}
           </tbody>
-        </table> : null}
+        </table>*/}
 
       </div>
     </>

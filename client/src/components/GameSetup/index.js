@@ -15,6 +15,7 @@ function GameSetup(props) {
       pin: gameData.pin,
       holes: gameData.holes,
       course: gameData.course,
+      scorecard: gameData.scorecard
     });
   };
 
