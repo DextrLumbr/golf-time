@@ -355,7 +355,7 @@ export default class Database {
             for (const sentence of summary) {
               console.log(sentence)
               let contentObj = {}
-              contentObj.sentence = sentence
+              contentObj.body = sentence
               let sentenceArray = []
               let phrases = nlp.readDoc(sentence).customEntities().out(its.detail)
               for (const phrase of phrases) {
