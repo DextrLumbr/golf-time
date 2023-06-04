@@ -11,6 +11,7 @@ import model from 'wink-eng-lite-model';
 const nlp = winkNLP(model);
 import BM25Vectorizer from 'wink-nlp/utilities/bm25-vectorizer.js';
 import SummaryTool from 'node-summary';
+import ObjectId from "mongoose";
 
 const emailRegexp = /^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*$/;
 
@@ -45,8 +46,18 @@ export default class Database {
 
   // Collection: "players"
 
+  async getContent(id) {
+    // console.log(await this.collection.find({ _id: MongoClient.ObjectId(id) }).toArray())
+    // let insert = await this.collection.findOne({_id:new ObjectId(id)})
+    let insert = await this.collection.find({_id: MongoClient.ObjectId(id)}).toArray()// .toArray()
+    // console.log(insert)
+    return insert;
+  }
+
   async addContent(obj) {
-    let insert = await this.collection.insertOne({url: obj.url, date:Date()})
+    // let insert = await this.collection.insertOne({url: obj.url, date:Date()})
+    obj.date = new Date(Date.now()).toString()
+    let insert = await this.collection.insertOne(obj)
     console.log(insert)
     return insert;
   }
@@ -277,7 +288,7 @@ export default class Database {
 
   async getArticleSummary(article) {
     if (article.content) {
-      article.content = article.content.replace( /(<([^>]+)>)/ig, '')
+      article.content = article.content.replace( /(<([^>]+)>)/ig, '').trim()
 
       var patterns = [
         {

@@ -43,12 +43,20 @@ App.post("/api/article/create", async (req,res) => {
   }
 })
 
+App.get("/api/content/:id", async (req, res) => {
+  // console.log(req.params.id)
+  var entry = await dbContent.getContent(req.params.id)
+  // console.log(entry)
+  res.json(entry)
+})
+
 App.get("/api/article/:url", async (req, res) => {
   console.log(req.params)
   try {
     var article = await extract(req.params.url);
     console.log(article)
     var sum = await dbContent.getArticleSummary(article)
+    await dbContent.addContent(article)
     // console.log(sum)
     } catch(e) {
       // console.log('Catch an error: ', e)
