@@ -9,6 +9,7 @@ import mongoose from 'mongoose';
 import bodyParser from 'body-parser';
 // import checkAuth from "./middlewares/check-auth.js";
 import { extract } from '@extractus/article-extractor'
+import googleImage from 'googlethis';
 
 
 const App = Express();
@@ -48,6 +49,23 @@ App.get("/api/content/:id", async (req, res) => {
   var entry = await dbContent.getContent(req.params.id)
   // console.log(entry)
   res.json(entry)
+})
+
+/*App.get("api/img", async (req,res) => {
+  console.log(req.params)
+  const images = await googleImage.image(req.params.term, { safe: false });
+  console.log(images);
+  res.json(image)
+})*/
+
+App.get("/api/img/:term", async (req, res) => {
+  console.log(req.params.term)
+  const images = await googleImage.image(req.params.term, { safe: false });
+  console.log(images);
+  res.json(images)
+  // var entry = await dbContent.getContent(req.params.id)
+  // console.log(entry)
+  // res.json(entry)
 })
 
 App.get("/api/article/:url", async (req, res) => {
