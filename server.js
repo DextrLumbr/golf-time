@@ -58,9 +58,9 @@ App.get("/api/content/:id", async (req, res) => {
   res.json(image)
 })*/
 
-App.get("/api/img/:term", async (req, res) => {
-  console.log(req.params.term)
-  const images = await googleImage.image(req.params.term, { safe: false });
+App.post("/api/find/images", async (req, res) => {
+  console.log(req.body)
+  const images = await googleImage.image(req.body.searchTerm, { safe: false });
   console.log(images);
   res.json(images)
   // var entry = await dbContent.getContent(req.params.id)
