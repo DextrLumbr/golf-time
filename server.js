@@ -89,10 +89,10 @@ App.post("/api/find/images", async (req, res) => {
   // res.json(entry)
 })
 
-App.get("/api/article/:url", async (req, res) => {
-  console.log(req.params)
+App.post("/api/article/url", async (req, res) => {
+  console.log(req.body.url)
   try {
-    var article = await extract(req.params.url);
+    var article = await extract(req.body.url);
     console.log(article)
     var sum = await dbContent.getArticleSummary(article)
     await dbContent.addContent(article)
