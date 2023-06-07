@@ -51,6 +51,14 @@ App.get("/api/content/:id", async (req, res) => {
   res.json(entry)
 })
 
+App.patch("/api/content/:id", async (req, res) => {
+  let id = req.params.id;
+  let updateValues = req.body.formValues;
+  console.log(id + updateValues)
+  const response = await dbContent.updateContent(id, updateValues);
+  res.json(response);
+});
+
 /*App.get("api/img", async (req,res) => {
   console.log(req.params)
   const images = await googleImage.image(req.params.term, { safe: false });

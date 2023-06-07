@@ -286,6 +286,14 @@ export default class Database {
     }
   }
 
+  async updateContent(id,content) {
+    let updateContent = await this.collection.updateOne(
+      {_id:MongoClient.ObjectId(id)},
+      {$set:{summary:content}}
+    );
+    return updateContent;
+  }
+
   async getArticleSummary(article) {
     if (article.content) {
       article.content = article.content.replace( /(<([^>]+)>)/ig, '').trim()
