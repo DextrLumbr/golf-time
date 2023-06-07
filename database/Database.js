@@ -294,6 +294,11 @@ export default class Database {
     return updateContent;
   }
 
+  async addContent(content) {
+    let newContent = await this.collection.insertOne(content);
+    return newContent
+  }
+
   async getArticleSummary(article) {
     if (article.content) {
       article.content = article.content.replace( /(<([^>]+)>)/ig, '').trim()

@@ -44,6 +44,19 @@ App.post("/api/article/create", async (req,res) => {
   }
 })
 
+App.post("/api/content/create", async (req,res) => {
+  console.log(req.body)
+  console.log(req.body)
+  const response = await dbContent.addContent(req.body);
+  res.json(response);
+})
+/*App.post("api/content/create", async (req,res) => {
+// App.post("api/content/create", async (req,res) => {
+  console.log(req.body)
+  const response = await dbContent.addContent(req.body);
+  res.json(response);
+})*/
+
 App.get("/api/content/:id", async (req, res) => {
   // console.log(req.params.id)
   var entry = await dbContent.getContent(req.params.id)
