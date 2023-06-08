@@ -299,6 +299,16 @@ export default class Database {
     return newContent
   }
 
+  async getBrands(id) {
+    let brands = this.collection.find({ creator:MongoClient.ObjectId(id)}).toArray()
+    return brands
+  }
+
+  async getBrand(id) {
+    let brands = this.collection.find({ _id:MongoClient.ObjectId(id)}).toArray()
+    return brands
+  }
+
   async getArticleSummary(article) {
     if (article.content) {
       article.content = article.content.replace( /(<([^>]+)>)/ig, '').trim()

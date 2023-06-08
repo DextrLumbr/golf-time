@@ -89,6 +89,20 @@ App.post("/api/find/images", async (req, res) => {
   // res.json(entry)
 })
 
+const dbBrands = new Database();
+dbBrands.connect("brandings","conditioningInfo");
+App.get("/api/brands/:id", async (req,res) => {
+  console.log(req.params.id)
+  var brands = await dbBrands.getBrands(req.params.id)
+  res.json(brands)
+})
+
+App.get("/api/brand/:id", async (req,res) => {
+  console.log(req.params.id)
+  var brand = await dbBrands.getBrand(req.params.id)
+  res.json(brand[0])
+})
+
 App.post("/api/article/url", async (req, res) => {
   console.log(req.body.url)
   try {
