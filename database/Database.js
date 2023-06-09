@@ -309,6 +309,11 @@ export default class Database {
     return brands
   }
 
+  async getJob(id) {
+    let job = this.collection.find({ _id:MongoClient.ObjectId(id)}).toArray()
+    return job
+  }
+
   async getArticleSummary(article) {
     if (article.content) {
       article.content = article.content.replace( /(<([^>]+)>)/ig, '').trim()

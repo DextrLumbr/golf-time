@@ -89,6 +89,14 @@ App.post("/api/find/images", async (req, res) => {
   // res.json(entry)
 })
 
+const dbJobs = new Database();
+dbJobs.connect("jobs","conditioningInfo");
+App.get("/api/job/:id", async (req,res) => {
+  console.log(req.params.id)
+  var job = await dbJobs.getJob(req.params.id)
+  res.json(job[0])
+})
+
 const dbBrands = new Database();
 dbBrands.connect("brandings","conditioningInfo");
 App.get("/api/brands/:id", async (req,res) => {
