@@ -314,6 +314,11 @@ export default class Database {
     return job
   }
 
+  async startJob(obj) {
+    let job = this.collection.insertOne(obj)
+    return job
+  }
+
   async getArticleSummary(article) {
     if (article.content) {
       article.content = article.content.replace( /(<([^>]+)>)/ig, '').trim()

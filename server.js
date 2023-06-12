@@ -97,6 +97,11 @@ App.get("/api/job/:id", async (req,res) => {
   res.json(job[0])
 })
 
+App.post("/api/jobs/insert", async (req,res) => {
+  var job = await dbJobs.startJob(req.body)
+  res.json(job)
+})
+
 const dbBrands = new Database();
 dbBrands.connect("brandings","conditioningInfo");
 App.get("/api/brands/:id", async (req,res) => {
