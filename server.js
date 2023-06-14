@@ -117,11 +117,17 @@ App.get("/api/brand/:id", async (req,res) => {
 })
 
 App.post("/api/article/url", async (req, res) => {
-  console.log(req.body.url)
+  // console.log(req.body.url)
   try {
-    var article = await extract(req.body.url);
-    console.log(article)
+    if (!req.body.content) {
+      var article = await extract(req.body.url);
+      // console.log(article)
+    } else {
+      var article = req.body
+    }
+    // console.log(article)
     var sum = await dbContent.getArticleSummary(article)
+    // console.log(article)
     await dbContent.addContent(article)
     // console.log(sum)
     } catch(e) {

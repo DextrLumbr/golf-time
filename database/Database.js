@@ -373,7 +373,7 @@ export default class Database {
       // getUniqueTerms()
           // console.log(bm25.out(its.idf))
           const sentenceCount = Math.round(articleDoc.sentences().out().length*.2) > 2 ? Math.round(articleDoc.sentences().out().length*.2) : 3
-          console.log(Math.round(articleDoc.sentences().out().length*.2))
+          // console.log(Math.round(articleDoc.sentences().out().length*.2))
           SummaryTool.getSortedSentences(article.content,sentenceCount,function(err, summary) {
             if(err) {
               console.log("err is ", err)
@@ -383,23 +383,23 @@ export default class Database {
               var comps = {}
               // console.log(summary)
               summary = [...new Set(summary)];
-              console.log(summary)
+              // console.log(summary)
               let content = []
             for (const sentence of summary) {
-              console.log(sentence)
+              // console.log(sentence)
               let contentObj = {}
               contentObj.body = sentence
               let sentenceArray = []
               let phrases = nlp.readDoc(sentence).customEntities().out(its.detail)
               for (const phrase of phrases) {
-                console.log(phrases)
+                // console.log(phrases)
                 var words = phrase.value.split(' ')
                 var tdIdfObj = {}
                 var totalIdf = 0
                 let theWord = ''
                 let wordObj = {}
                 for (var word of words) {
-                  console.log(word)
+                  // console.log(word)
                   theWord += word + ' '
                   for (const property in tfObj) {
                     if (property == word.toLowerCase()) {
