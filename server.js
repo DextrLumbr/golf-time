@@ -121,6 +121,7 @@ App.post("/api/article/url", async (req, res) => {
   try {
     if (!req.body.content) {
       var article = await extract(req.body.url);
+      article.creator = req.body.creator
       // console.log(article)
     } else {
       var article = req.body
