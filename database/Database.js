@@ -62,6 +62,19 @@ export default class Database {
     return insert;
   }
 
+  async insertToDb(obj) {
+    obj.created = Date()
+    obj.creator = MongoClient.ObjectId(obj.creator)
+    try {
+      let insert = await this.collection.insertOne(obj)
+      console.log(insert)
+      return insert;
+    } catch(e) {
+      console.log(e)
+      return e
+    }
+  }
+
   // createUser() Create a user in the users collection
   async createUser(userObj) {
     console.log(userObj)
