@@ -116,7 +116,12 @@ App.get("/api/brand/:id", async (req,res) => {
   res.json(brand[0])
 })
 
+/*App.get("/api/brands/find/:name", async (req,res) => {
+
+})*/
+
 App.post("/api/brand/create", async(req,res) => {
+  req.body.categories = JSON.parse(req.body.categories)
   var insert = await dbBrands.insertToDb(req.body)
   res.json(insert)
 })
