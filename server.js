@@ -101,10 +101,10 @@ App.get("/api/job/:id", async (req,res) => {
   res.json(job[0])
 })
 
-/*App.get("/api/jobs/:id", async (req,res) => {
-  var jobs = await dbJobs.getJob(req.params.id)
+App.get("/api/jobs/:id", async (req,res) => {
+  var jobs = await dbJobs.getJobs(req.params.id)
   res.json(jobs)
-})*/
+})
 
 App.post("/api/jobs/insert", async (req,res) => {
   var job = await dbJobs.startJob(req.body)

@@ -335,10 +335,10 @@ export default class Database {
     return job
   }
 
-  /*async getJobs(id) {
-    let job = this.collection.find({ creator:MongoClient.ObjectId(id)}).toArray()
+  async getJobs(id) {
+    let job = this.collection.find({ creator:id}).toArray()
     return job
-  }*/
+  }
 
   async startJob(obj) {
     let job = this.collection.insertOne(obj)
