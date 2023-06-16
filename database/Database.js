@@ -54,6 +54,14 @@ export default class Database {
     return insert;
   }
 
+  async getContents(id) {
+    // console.log(await this.collection.find({ _id: MongoClient.ObjectId(id) }).toArray())
+    // let insert = await this.collection.findOne({_id:new ObjectId(id)})
+    let insert = await this.collection.find({creator: id}).toArray()// .toArray()
+    // console.log(insert)
+    return insert;
+  }
+
   async addContent(obj) {
     // let insert = await this.collection.insertOne({url: obj.url, date:Date()})
     obj.date = new Date(Date.now()).toString()
@@ -326,6 +334,11 @@ export default class Database {
     let job = this.collection.find({ _id:MongoClient.ObjectId(id)}).toArray()
     return job
   }
+
+  /*async getJobs(id) {
+    let job = this.collection.find({ creator:MongoClient.ObjectId(id)}).toArray()
+    return job
+  }*/
 
   async startJob(obj) {
     let job = this.collection.insertOne(obj)

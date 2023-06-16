@@ -56,6 +56,10 @@ App.post("/api/content/create", async (req,res) => {
   const response = await dbContent.addContent(req.body);
   res.json(response);
 })*/
+App.get("/api/contents/:id", async (req,res) => {
+  var entry = await dbContent.getContents(req.params.id)
+  res.json(entry)
+})
 
 App.get("/api/content/:id", async (req, res) => {
   // console.log(req.params.id)
@@ -96,6 +100,11 @@ App.get("/api/job/:id", async (req,res) => {
   var job = await dbJobs.getJob(req.params.id)
   res.json(job[0])
 })
+
+/*App.get("/api/jobs/:id", async (req,res) => {
+  var jobs = await dbJobs.getJob(req.params.id)
+  res.json(jobs)
+})*/
 
 App.post("/api/jobs/insert", async (req,res) => {
   var job = await dbJobs.startJob(req.body)
