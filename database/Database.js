@@ -57,7 +57,7 @@ export default class Database {
   async getContents(id) {
     // console.log(await this.collection.find({ _id: MongoClient.ObjectId(id) }).toArray())
     // let insert = await this.collection.findOne({_id:new ObjectId(id)})
-    let insert = await this.collection.find({creator: id}).toArray()// .toArray()
+    let insert = await this.collection.find({creator: MongoClient.ObjectId(id)}).toArray()// .toArray()
     // console.log(insert)
     return insert;
   }
@@ -332,7 +332,7 @@ export default class Database {
   }*/
 
   async getBrands(id) {
-    let brands = this.collection.find({ 'creator.$.id':MongoClient.ObjectId(id)}).toArray()
+    let brands = this.collection.find({ creator: { $elemMatch: {id:MongoClient.ObjectId(id)} }}).toArray()
     // creator: { $elemMatch: {id:MongoClient.ObjectId(id)} }
     return brands
   }
