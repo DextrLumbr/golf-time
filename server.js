@@ -131,7 +131,7 @@ App.get("/api/brand/:id", async (req,res) => {
 
 App.post("/api/brand/create", async(req,res) => {
   req.body.categories = JSON.parse(req.body.categories)
-  var insert = await dbBrands.insertToDb(req.body)
+  var insert = await dbBrands.insertBrandToDb(req.body)
   res.json(insert)
 })
 

@@ -64,22 +64,32 @@ export default class Database {
 
   async addContent(obj) {
     // let insert = await this.collection.insertOne({url: obj.url, date:Date()})
-    obj.date = new Date(Date.now()).toString()
+    if (obj.creator) {
+      // obj.creator = [{id:MongoClient.ObjectId(obj.creator),role:0}]
+      obj.creator = MongoClient.ObjectId(obj.creator)
+    }
+    obj.created = new Date(Date.now()).toString()
+    // obj.created = Date()
     let insert = await this.collection.insertOne(obj)
     console.log(insert)
     return insert;
   }
 
-  async insertToDb(obj) {
-    obj.created = Date()
-    obj.creator = MongoClient.ObjectId(obj.creator)
-    try {
-      let insert = await this.collection.insertOne(obj)
-      console.log(insert)
-      return insert;
-    } catch(e) {
-      console.log(e)
-      return e
+  async insertBrandToDb(obj) {
+    // obj.created = Date()
+    if (obj.creator) {
+      obj.created = new Date(Date.now()).toString()
+      obj.creator = [{id:MongoClient.ObjectId(obj.creator),role:0}]
+      try {
+        let insert = await this.collection.insertOne(obj)
+        console.log(insert)
+        return insert;
+      } catch(e) {
+        console.log(e)
+        return e
+      }
+    } else {
+      return {authErro:"you don't have permission to create a brand"}
     }
   }
 
@@ -315,13 +325,15 @@ export default class Database {
     return updateContent;
   }
 
-  async addContent(content) {
+  /*async addContent(content) {
+    content.creator = [{id:MongoClient.ObjectId(obj.creator),role:0}]
     let newContent = await this.collection.insertOne(content);
     return newContent
-  }
+  }*/
 
   async getBrands(id) {
-    let brands = this.collection.find({ creator:MongoClient.ObjectId(id)}).toArray()
+    let brands = this.collection.find({ 'creator.$.id':MongoClient.ObjectId(id)}).toArray()
+    // creator: { $elemMatch: {id:MongoClient.ObjectId(id)} }
     return brands
   }
 
