@@ -75,6 +75,12 @@ export default class Database {
     return insert;
   }
 
+  async getBlogContents(id) {
+    return await this.collection.find({
+      creator: MongoClient.ObjectId(id), status:'published'
+    }).toArray();
+  }
+
   async insertBrandToDb(obj) {
     // obj.created = Date()
     if (obj.creator) {

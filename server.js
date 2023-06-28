@@ -76,6 +76,12 @@ App.patch("/api/content/:id", async (req, res) => {
   res.json(response);
 });
 
+App.get("/api/contents/published/:id", async (req,res) => {
+  let id = req.params.id;
+  const response = await dbContent.getBlogContents(id)
+  res.json(response);
+})
+
 /*App.get("api/img", async (req,res) => {
   console.log(req.params)
   const images = await googleImage.image(req.params.term, { safe: false });
