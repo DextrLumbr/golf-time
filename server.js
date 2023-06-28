@@ -19,7 +19,10 @@ const uri = process.env.MONGODB_URI
 // const client = new MongoClient(uri);
 
 App.use(Express.json());
-App.use(CORS(origin: 'https://www.timbrtech.com'));
+App.use(CORS());
+App.options('/*', (_, res) => {
+    res.sendStatus(200);
+});
 App.use(bodyParser.json());
 
 const dbContent = new Database();
