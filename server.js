@@ -76,9 +76,15 @@ App.patch("/api/content/:id", async (req, res) => {
   res.json(response);
 });
 
-App.get("/api/contents/published/:id", async (req,res) => {
+App.get("/api/contents/published/:creator/:id", async (req,res) => {
   let id = req.params.id;
-  const response = await dbContent.getBlogContents(id)
+  const response = await dbContent.getBlogContents(req.params.creator,id)
+  res.json(response);
+})
+
+App.get("/api/contents/published/:brand/:id", async (req,res) => {
+  let id = req.params.id;
+  const response = await dbContent.getBlogContents(req.params.brand,id)
   res.json(response);
 })
 

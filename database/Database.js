@@ -75,9 +75,9 @@ export default class Database {
     return insert;
   }
 
-  async getBlogContents(id) {
+  async getBlogContents(type,id) {
     return await this.collection.find({
-      creator: MongoClient.ObjectId(id), status:'published'
+      [type]: MongoClient.ObjectId(id), status:'published'
     }).toArray();
   }
 
