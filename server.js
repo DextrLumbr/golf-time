@@ -20,9 +20,9 @@ const uri = process.env.MONGODB_URI
 
 App.use(Express.json());
 App.use(CORS());
-App.options('/*', (_, res) => {
+/*App.options('/*', (_, res) => {
     res.sendStatus(200);
-});
+});*/
 App.use(bodyParser.json());
 
 const dbContent = new Database();
@@ -79,17 +79,17 @@ App.patch("/api/content/:id", async (req, res) => {
   res.json(response);
 });
 
-App.get("/api/contents/published/:creator/:id", async (req,res) => {
+App.get("/api/contents/published/:type/:id", async (req,res) => {
   let id = req.params.id;
-  const response = await dbContent.getBlogContents(req.params.creator,id)
+  const response = await dbContent.getBlogContents(req.params.type,id)
   res.json(response);
 })
 
-App.get("/api/contents/published/:brand/:id", async (req,res) => {
+/*App.get("/api/contents/published/:brand/:id", async (req,res) => {
   let id = req.params.id;
   const response = await dbContent.getBlogContents(req.params.brand,id)
   res.json(response);
-})
+})*/
 
 /*App.get("api/img", async (req,res) => {
   console.log(req.params)
