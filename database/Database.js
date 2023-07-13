@@ -62,6 +62,12 @@ export default class Database {
     return insert;
   }
 
+  async getCategories() {
+    let insert = await this.collection.find().toArray()// .toArray()
+    // console.log(insert)
+    return insert;
+  }
+
   async addContent(obj) {
     // let insert = await this.collection.insertOne({url: obj.url, date:Date()})
     if (obj.creator) {
